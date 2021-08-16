@@ -50,7 +50,11 @@ class Lemmatizer(BaseEstimator):
 def lem_features(data, features):
     lemmatizer = Lemmatizer()
     for feature in features:
-        data[feature] = lemmatizer.transform(data[feature])
+        try:
+            data[feature] = lemmatizer.transform(data[feature])
+        except Exception as ex:
+            print("Bad feature \"{}\" value".format(feature))
+            raise ex
 
 
 model = pickle.load(open(filename, 'rb'))
@@ -72,14 +76,13 @@ def baro_post_request():
             'SellerAnswer': request.json['SellerAnswer'],
             'CustomerFollowingMessage': request.json['CustomerFollowingMessage']
         }
+        x = pd.DataFrame(data, index=[0])
+        lem_features(x, features)
+        y = model.predict(x)
+        return jsonify({'result': y[0]})
     except Exception as ex:
         print(ex)
         return jsonify({'result': 500, 'errorMessage': 'Something went wrong'})
-    x = pd.DataFrame(data, index=[0])
-    lem_features(x, features)
-    y = model.predict(x)
-
-    return jsonify({'result': y[0]})
 
 
 if __name__ == "__main__":
