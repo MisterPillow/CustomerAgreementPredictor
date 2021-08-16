@@ -76,7 +76,7 @@ def baro_post_request():
         return jsonify({'result': y[0]})
     except Exception as ex:
         print(ex)
-        return jsonify({'result': 500, 'errorMessage': 'Something went wrong'})
+        return jsonify({'result': 0.5, 'errorMessage': 'Something went wrong'})
 
 
 if __name__ == "__main__":
