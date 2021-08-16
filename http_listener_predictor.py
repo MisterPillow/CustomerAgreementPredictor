@@ -53,7 +53,8 @@ def lem_features(data, features):
         try:
             data[feature] = lemmatizer.transform(data[feature])
         except Exception as ex:
-            print("Bad feature \"{}\" value".format(feature))
+            print("Bad feature \"{}\" value".format(feature),
+                  flush=True)  # Required to print message to log when app is started via gunicorn
             raise ex
 
 
@@ -69,7 +70,8 @@ def baro_post_request():
         print("Request received. PrevBaro: ", request.json['PrevBaro'], ",",
               "CustomerInitMessage: ", "\"{0}\",".format(request.json['CustomerInitMessage']),
               "SellerAnswer: ", "\"{0}\",".format(request.json['SellerAnswer']),
-              "CustomerFollowingMessage: ", "\"{0}\",".format(request.json['CustomerFollowingMessage']))
+              "CustomerFollowingMessage: ", "\"{0}\",".format(request.json['CustomerFollowingMessage']),
+              flush=True)  # Required to print message to log when app is started via gunicorn
         data = {
             'PrevBaro': request.json['PrevBaro'],
             'CustomerInitMessage': request.json['CustomerInitMessage'],
