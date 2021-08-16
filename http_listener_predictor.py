@@ -5,9 +5,7 @@ import nltk
 nltk.download('stopwords')
 from nltk.corpus import stopwords
 from sklearn.base import BaseEstimator
-from sklearn.utils.validation import check_X_y, check_array
 import pandas as pd
-import numpy as np
 import pickle
 # imports for deploying
 from flask import Flask, jsonify, request
