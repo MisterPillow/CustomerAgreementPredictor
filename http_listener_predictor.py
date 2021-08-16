@@ -63,7 +63,7 @@ def baro_post_request():
             format_param(request.json['CustomerInitMessage']),
             format_param(request.json['SellerAnswer']),
             format_param(request.json['CustomerFollowingMessage'])
-        ), flush=True) # Required to print message to log when app is started via gunicorn
+        ), flush=True)  # Required to print message to log when app is started via gunicorn
         data = {
             'PrevBaro': request.json['PrevBaro'],
             'CustomerInitMessage': request.json['CustomerInitMessage'],
@@ -73,6 +73,8 @@ def baro_post_request():
         x = pd.DataFrame(data, index=[0])
         lem_features(data=x, features=text_features)
         y = model.predict(x)
+        print("Predicted value: {0}".format(y[0]),
+              flush=True)  # Required to print message to log when app is started via gunicorn
         return jsonify({'result': y[0]})
     except Exception as ex:
         print(ex)
