@@ -9,4 +9,4 @@ ADD CAR_predictor CAR_predictor
 
 EXPOSE 5000
 
-CMD [ "gunicorn", "--bind", "0.0.0.0:5000", "http_listener_predictor:app" ]
+CMD [ "gunicorn", "--bind", "0.0.0.0:5000", "http_listener_predictor:app", "--log-level", "debug" ]
