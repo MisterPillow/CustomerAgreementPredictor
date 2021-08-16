@@ -57,14 +57,24 @@ model = pickle.load(open(filename, 'rb'))
 app = Flask(__name__)
 features = ['CustomerInitMessage', 'SellerAnswer', 'CustomerFollowingMessage']
 
+
 @app.route('/baro', methods=['POST'])
 def baro_post_request():
-    data = {
-        'PrevBaro': request.json['PrevBaro'],
-        'CustomerInitMessage': request.json['CustomerInitMessage'],
-        'SellerAnswer': request.json['SellerAnswer'],
-        'CustomerFollowingMessage': request.json['CustomerFollowingMessage']
-    }
+    try:
+        # Debug output
+        print("Request received. PrevBaro: ", request.json['PrevBaro'], ",",
+              "CustomerInitMessage: ", "\"{0}\",".format(request.json['CustomerInitMessage']),
+              "SellerAnswer: ", "\"{0}\",".format(request.json['SellerAnswer']),
+              "CustomerFollowingMessage: ", "\"{0}\",".format(request.json['CustomerFollowingMessage']))
+        data = {
+            'PrevBaro': request.json['PrevBaro'],
+            'CustomerInitMessage': request.json['CustomerInitMessage'],
+            'SellerAnswer': request.json['SellerAnswer'],
+            'CustomerFollowingMessage': request.json['CustomerFollowingMessage']
+        }
+    except Exception as ex:
+        print(ex)
+        return jsonify({'result': 500, 'errorMessage': 'Something went wrong'})
     x = pd.DataFrame(data, index=[0])
     lem_features(x, features)
     y = model.predict(x)
