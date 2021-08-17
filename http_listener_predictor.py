@@ -1,12 +1,11 @@
 import re
 from pymorphy2 import MorphAnalyzer
 import nltk
+
 nltk.download('stopwords')
 from nltk.corpus import stopwords
 from sklearn.base import BaseEstimator
-from sklearn.utils.validation import check_X_y, check_array
 import pandas as pd
-import numpy as np
 import pickle
 # imports for deploying
 from flask import Flask, jsonify, request
@@ -19,22 +18,8 @@ class Lemmatizer(BaseEstimator):
     patterns = "[A-Za-z0-9!#$%&'()*+,./:;<=>?@[\]^_`{|}~—\"\-]+"
     morph = MorphAnalyzer()
 
-    def fit(self, X, y):
-        if isinstance(X, np.ndarray):
-            # Check that X and y have correct shape
-            X, y = check_X_y(X, y)
-        self.X_ = X
-        self.y_ = y
-        return self
-
     def transform(self, X):
-        if isinstance(X, np.ndarray):
-            X = check_array(X, accept_sparse=True)
-            return X
         return X.apply(self.lemmatize)
-
-    #     def fit_transform(self, X, y):
-    #         return self.fit(X, y).transform(X)
 
     def lemmatize(self, line):
         data = re.sub(self.patterns, ' ', line)
@@ -50,26 +35,48 @@ class Lemmatizer(BaseEstimator):
 def lem_features(data, features):
     lemmatizer = Lemmatizer()
     for feature in features:
-        data[feature] = lemmatizer.transform(data[feature])
+        try:
+            data[feature] = lemmatizer.transform(data[feature])
+        except Exception as ex:
+            print("Bad feature \"{}\" value".format(feature),
+                  flush=True)  # Required to print message to log when app is started via gunicorn
+            raise ex
 
 
 model = pickle.load(open(filename, 'rb'))
 app = Flask(__name__)
-features = ['CustomerInitMessage', 'SellerAnswer', 'CustomerFollowingMessage']
+text_features = ['CustomerInitMessage', 'SellerAnswer', 'CustomerFollowingMessage']
+
+
+def format_param(param):
+    return "\"{0}\"".format(param) if isinstance(param, str) else "{0}".format(param)
+
 
 @app.route('/baro', methods=['POST'])
 def baro_post_request():
-    data = {
-        'PrevBaro': request.json['PrevBaro'],
-        'CustomerInitMessage': request.json['CustomerInitMessage'],
-        'SellerAnswer': request.json['SellerAnswer'],
-        'CustomerFollowingMessage': request.json['CustomerFollowingMessage']
-    }
-    x = pd.DataFrame(data, index=[0])
-    lem_features(x, features)
-    y = model.predict(x)
-
-    return jsonify({'result': y[0]})
+    try:
+        # Debug output
+        print("Request received. PrevBaro: {0}, CustomerInitMessage: {1}, SellerAnswer: {2}, CustomerFollowingMessage: {3}".format(
+            request.json['PrevBaro'],
+            format_param(request.json['CustomerInitMessage']),
+            format_param(request.json['SellerAnswer']),
+            format_param(request.json['CustomerFollowingMessage'])
+        ), flush=True)  # Required to print message to log when app is started via gunicorn
+        data = {
+            'PrevBaro': request.json['PrevBaro'],
+            'CustomerInitMessage': request.json['CustomerInitMessage'],
+            'SellerAnswer': request.json['SellerAnswer'],
+            'CustomerFollowingMessage': request.json['CustomerFollowingMessage']
+        }
+        x = pd.DataFrame(data, index=[0])
+        lem_features(data=x, features=text_features)
+        y = model.predict(x)
+        print("Predicted value: {0}".format(y[0]),
+              flush=True)  # Required to print message to log when app is started via gunicorn
+        return jsonify({'result': y[0]})
+    except Exception as ex:
+        print(ex)
+        return jsonify({'result': 0.5, 'errorMessage': 'Something went wrong'})
 
 
 if __name__ == "__main__":
