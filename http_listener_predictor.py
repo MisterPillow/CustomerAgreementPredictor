@@ -2,7 +2,6 @@ import re
 from pymorphy2 import MorphAnalyzer
 import nltk
 
-nltk.download('stopwords')
 from nltk.corpus import stopwords
 from sklearn.base import BaseEstimator
 import pandas as pd
@@ -10,7 +9,9 @@ import pickle
 # imports for deploying
 from flask import Flask, jsonify, request
 
-filename = 'CAR_predictor'
+nltk.download('stopwords')
+model_baro_filename = 'baro_predictor'
+model_temperament_filename = 'temperament_predictor'
 stopwords_ru = stopwords.words("russian")
 
 
@@ -43,7 +44,8 @@ def lem_features(data, features):
             raise ex
 
 
-model = pickle.load(open(filename, 'rb'))
+model_baro = pickle.load(open(model_baro_filename, 'rb'))
+model_temperament = pickle.load(open(model_temperament_filename, 'rb'))
 app = Flask(__name__)
 text_features = ['CustomerInitMessage', 'SellerAnswer', 'CustomerFollowingMessage']
 
@@ -56,12 +58,13 @@ def format_param(param):
 def baro_post_request():
     try:
         # Debug output
-        print("Request received. PrevBaro: {0}, CustomerInitMessage: {1}, SellerAnswer: {2}, CustomerFollowingMessage: {3}".format(
-            request.json['PrevBaro'],
-            format_param(request.json['CustomerInitMessage']),
-            format_param(request.json['SellerAnswer']),
-            format_param(request.json['CustomerFollowingMessage'])
-        ), flush=True)  # Required to print message to log when app is started via gunicorn
+        print(
+            "Request received. PrevBaro: {0}, CustomerInitMessage: {1}, SellerAnswer: {2}, CustomerFollowingMessage: {3}".format(
+                request.json['PrevBaro'],
+                format_param(request.json['CustomerInitMessage']),
+                format_param(request.json['SellerAnswer']),
+                format_param(request.json['CustomerFollowingMessage'])
+            ), flush=True)  # Required to print message to log when app is started via gunicorn
         data = {
             'PrevBaro': request.json['PrevBaro'],
             'CustomerInitMessage': request.json['CustomerInitMessage'],
@@ -70,13 +73,60 @@ def baro_post_request():
         }
         x = pd.DataFrame(data, index=[0])
         lem_features(data=x, features=text_features)
-        y = model.predict(x)
+        y = model_baro.predict(x)
         print("Predicted value: {0}".format(y[0]),
               flush=True)  # Required to print message to log when app is started via gunicorn
         return jsonify({'result': y[0]})
     except Exception as ex:
         print(ex)
         return jsonify({'result': 0.5, 'errorMessage': 'Something went wrong'})
+
+
+@app.route('/temperament', methods=['POST'])
+def temperament_post_request():
+    """ Human temperaments: choleric, phlegmatic, sanguine and melancholic"""
+    try:
+        # Debug output
+        print(
+            "Temperament POST request received. CustomerInitMessage: {0}, SellerAnswer: {1}, CustomerFollowingMessage: {2}".format(
+                format_param(request.json['CustomerInitMessage']),
+                format_param(request.json['SellerAnswer']),
+                format_param(request.json['CustomerFollowingMessage'])
+            ), flush=True)  # Required to print message to log when app is started via gunicorn
+        data = {
+            'CustomerInitMessage': request.json['CustomerInitMessage'],
+            'SellerAnswer': request.json['SellerAnswer'],
+            'CustomerFollowingMessage': request.json['CustomerFollowingMessage']
+        }
+        x = pd.DataFrame(data, index=[0])
+        lem_features(data=x, features=text_features)
+        y = model_temperament.predict(x)
+        print("Predicted temperament: choleric {0}, phlegmatic {1}, sanguine {2}, melancholic {3}"
+              .format(y[0][0], y[0][1], y[0][2], y[0][3]),
+              flush=True)  # Required to print message to log when app is started via gunicorn
+        return jsonify(
+            {
+                "temperament":
+                    {
+                        "choleric": y[0][0],
+                        "phlegmatic": y[0][1],
+                        "sanguine": y[0][2],
+                        "melancholic": y[0][3]
+                    }
+            })
+    except Exception as ex:
+        print(ex)
+        return jsonify(
+            {
+                'errorMessage': 'Something went wrong',
+                "temperament":
+                    {
+                        "choleric": 0,
+                        "phlegmatic": 0,
+                        "sanguine": 0,
+                        "melancholic": 0
+                    }
+            })
 
 
 if __name__ == "__main__":
