@@ -5,7 +5,8 @@ RUN python -m pip install flask gunicorn numpy pandas pillow pymorphy2 nltk skle
 WORKDIR /app
 
 ADD http_listener_predictor.py http_listener_predictor.py
-ADD CAR_predictor CAR_predictor
+ADD baro_predictor baro_predictor
+ADD temperament_predictor temperament_predictor
 
 EXPOSE 5000
 
