@@ -60,6 +60,7 @@ definitions:
     properties:
       errorMessage:
         type: "string"
+        description: "Information about error handled during predicting. Is not provided in case of successful predicting"
       result:
         type: "number"
   TemperamentInput:
@@ -82,6 +83,7 @@ definitions:
     properties:
       errorMessage:
         type: "string"
+        description: "Information about error handled during predicting. Is not provided in case of successful predicting"
       temperament:
         type: "object"
         required:
