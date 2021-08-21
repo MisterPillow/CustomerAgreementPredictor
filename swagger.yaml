@@ -1,0 +1,104 @@
+swagger: "2.0"
+info:
+  description: "API for ML-predictor. See https://github.com/MisterPillow/CustomerAgreementPredictor"
+  title: "Customer predictor"
+  version: "1.0.0"
+host: "0.0.0.0"
+schemes:
+- "http"
+paths:
+  /baro:
+    post:
+      summary: "Predict the current customer barometer value based on previous value and the dialog segment"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: true
+        schema:
+          $ref: '#/definitions/BaroInput'
+      responses:
+        "200":
+          description: "The result of baro predicting (or error if handled)"
+          schema:
+            $ref: '#/definitions/BaroOutput'
+  /temperament:
+    post:
+      summary: "Predict the temperament ration of customer based on the dilog segment"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: true
+        schema:
+          $ref: '#/definitions/TemperamentInput'
+      responses:
+        "200":
+          description: "The result of temperament predicting (or error if handled)"
+          schema:
+            $ref: '#/definitions/TemperamentOutput'
+definitions:
+  BaroInput:
+    type: "object"
+    required:
+    - prevBaro
+    - customerInitMessage
+    - sellerAnswer
+    - customerFollowingMessage
+    properties:
+      prevBaro:
+        type: "number"
+        format: "double"
+      customerInitMessage:
+        type: "string"
+      sellerAnswer:
+        type: "string"
+      customerFollowingMessage:
+        type: "string"
+  BaroOutput:
+    type: "object"
+    required:
+    - result
+    properties:
+      errorMessage:
+        type: "string"
+      result:
+        type: "number"
+  TemperamentInput:
+    type: "object"
+    required:
+    - customerInitMessage
+    - sellerAnswer
+    - customerFollowingMessage
+    properties:
+      customerInitMessage:
+        type: "string"
+      sellerAnswer:
+        type: "string"
+      customerFollowingMessage:
+        type: "string"
+  TemperamentOutput:
+    type: "object"
+    required:
+    - temperament
+    properties:
+      errorMessage:
+        type: "string"
+      temperament:
+        type: "object"
+        required:
+        - choleric
+        - phlegmatic
+        - sanguine
+        - melancholic
+        properties:
+          choleric:
+            type: "string"
+          phlegmatic:
+            type: "string"
+          sanguine:
+            type: "string"
+          melancholic:
+            type: "string"
+
+externalDocs:
+  description: "Find out more about Swagger"
+  url: "http://swagger.io"
