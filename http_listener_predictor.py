@@ -135,15 +135,15 @@ def temperament_post_request():
 
 
 # init model once when server started
-model = Model(r"./speach/vosk-model-small-ru-0.15")
+model = Model(r"speech/vosk-model-small-ru-0.15")
 rec = KaldiRecognizer(model, 16000)
 
 
-@app.route('/speach_to_text', methods=['POST'])
-def speach_to_text():
-    frames = base64.standard_b64decode(request.json['message_bytes'])
+@app.route('/speech_to_text', methods=['POST'])
+def speech_to_text():
+    frames = base64.standard_b64decode(request.json['Data'])
     with wave.open('tmp.wav', 'wb') as wavfile:
-        wavfile.setparams((2, 2, 8000, 0, 'NONE', 'NONE'))
+        wavfile.setparams((2, 2, 16000, 0, 'NONE', 'NONE'))
         wavfile.writeframes(frames)
 
     wf = wave.open(r'tmp.wav', "rb")
@@ -152,7 +152,7 @@ def speach_to_text():
     last_n = False
 
     while True:
-        data = wf.readframes(8000)
+        data = wf.readframes(16000)
         if len(data) == 0:
             break
 
