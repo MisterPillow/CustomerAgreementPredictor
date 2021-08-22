@@ -9,6 +9,11 @@ import pickle
 # imports for deploying
 from flask import Flask, jsonify, request
 
+from vosk import Model, KaldiRecognizer
+import json
+import base64
+import wave
+
 nltk.download('stopwords')
 model_baro_filename = 'baro_predictor'
 model_temperament_filename = 'temperament_predictor'
@@ -128,6 +133,48 @@ def temperament_post_request():
                     }
             })
 
+
+# init model once when server started
+model = Model(r"./speach/vosk-model-small-ru-0.15")
+rec = KaldiRecognizer(model, 16000)
+
+
+@app.route('/speach_to_text', methods=['POST'])
+def speach_to_text():
+    frames = base64.standard_b64decode(request.json['message_bytes'])
+    with wave.open('tmp.wav', 'wb') as wavfile:
+        wavfile.setparams((2, 2, 8000, 0, 'NONE', 'NONE'))
+        wavfile.writeframes(frames)
+
+    wf = wave.open(r'tmp.wav', "rb")
+
+    result = ''
+    last_n = False
+
+    while True:
+        data = wf.readframes(8000)
+        if len(data) == 0:
+            break
+
+        if rec.AcceptWaveform(data):
+            res = json.loads(rec.Result())
+
+            if res['text'] != '':
+                result += f" {res['text']}"
+                last_n = False
+            elif not last_n:
+                result += '\n'
+                last_n = True
+
+    res = json.loads(rec.FinalResult())
+    result += f" {res['text']}"
+
+    print(result)
+    return jsonify(
+        {
+            "result": result
+        }
+    )
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
