@@ -1,6 +1,6 @@
 FROM python:3.7
 
-RUN python -m pip install flask gunicorn numpy pandas pillow pymorphy2 nltk sklearn
+RUN python -m pip install flask gunicorn numpy pandas pillow pymorphy2 nltk sklearn vosk json wave
 
 WORKDIR /app
 
